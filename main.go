@@ -17,23 +17,35 @@ const (
 
 var router *chi.Mux
 
+// server starting point
+func ping(w http.ResponseWriter, r *http.Request) {
+	respondwithJSON(w, http.StatusOK, map[string]string{"message": "Pong"})
+}
+
 func routers() *chi.Mux {
 
 	router.Get("/", ping)
 
+	router.Get("/alldata", AllData)
+	//cliente
 	router.Get("/clientes", AllClientes)
-	router.Get("/alldata", AllClientes)
-	router.Get("/cliente/{id}", ObtenerClienteByID)
-	router.Post("/cliente/create", CrearCliente)
-	router.Put("/cliente/update/{id}", ActualizarCliente)
-	router.Delete("/cliente/{id}", EliminarCliente)
-
+	router.Get("/cliente/{id}", GetClienteByID)
+	router.Put("/cliente/{id}", PutCliente)
+	router.Delete("/cliente/{id}", DeleteCliente)
+	router.Post("/cliente", PostCliente)
+	//transaccion
+	router.Get("/transacciones", AllTransaccion)
+	router.Get("/transaccion/{id}", GetTransaccionByID)
+	router.Put("/transaccion/{id}", PutTransaccion)
+	router.Delete("/transaccion/{id}", DeleteTransaccion)
+	router.Post("/transaccion", PostTransaccion)
+	//producto
+	router.Get("/productos", AllProducto)
+	router.Get("/producto/{id}", GetProductoByID)
+	router.Put("/producto/{id}", PutProducto)
+	router.Delete("/producto/{id}", DeleteProducto)
+	router.Post("/producto", PostProducto)
 	return router
-}
-
-// server starting point
-func ping(w http.ResponseWriter, r *http.Request) {
-	respondwithJSON(w, http.StatusOK, map[string]string{"message": "Pong"})
 }
 
 func main() {
