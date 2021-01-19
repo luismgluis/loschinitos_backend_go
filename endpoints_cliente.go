@@ -13,6 +13,32 @@ import (
 )
 
 //-------------- API ENDPOINT ------------------//
+func GetClienteIDfromOldID(olduid string, fn FunctionBackString) {
+	q := fmt.Sprintf(`
+	{
+		clientes(func: eq(UIDOLD,"%s")) {
+		  uid
+		  UIDOLD
+		}
+	}
+	`, olduid)
+
+	ConsultaDataBase(q, func(data []byte) {
+		ccc := Clientes{}
+		err3312 := json.Unmarshal(data, &ccc)
+		if err3312 == nil {
+			clientes := ccc.Clientes
+			micliente := clientes[0]
+			if micliente.UID != "" {
+				fn(micliente.UID)
+			} else {
+				fn("")
+			}
+		} else {
+			fn("")
+		}
+	})
+}
 
 // AllClientes returns todos los clientes en la DB
 func AllClientes(w http.ResponseWriter, r *http.Request) {
@@ -100,8 +126,7 @@ func PostCliente(w http.ResponseWriter, r *http.Request) {
 			}
 			MutacionDataBase(jsonbytes, func(data []byte) {
 				w.Header().Set("Content-Type", "application/json")
-				if data != nil {
-					fmt.Printf("%s", string(data))
+				if data == nil {
 					w.Write([]byte(`{"result":"ok"}`))
 				} else {
 					w.Write([]byte(`{"result":"error"}`))
@@ -138,8 +163,8 @@ func PutCliente(w http.ResponseWriter, r *http.Request) {
 			}
 			MutacionDataBase(jsonbytes, func(data []byte) {
 				w.Header().Set("Content-Type", "application/json")
-				if data != nil {
-					fmt.Printf("%s", string(data))
+				if data == nil {
+					//fmt.Printf("%s", string(data))
 					w.Write([]byte(`{"result":"ok"}`))
 				} else {
 					w.Write([]byte(`{"result":"error"}`))

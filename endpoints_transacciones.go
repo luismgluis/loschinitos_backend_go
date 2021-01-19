@@ -100,8 +100,8 @@ func PostTransaccion(w http.ResponseWriter, r *http.Request) {
 			}
 			MutacionDataBase(jsonbytes, func(data []byte) {
 				w.Header().Set("Content-Type", "application/json")
-				if data != nil {
-					fmt.Printf("%s", string(data))
+				if data == nil {
+					//fmt.Printf("%s", string(data))
 					w.Write([]byte(`{"result":"ok"}`))
 				} else {
 					w.Write([]byte(`{"result":"error"}`))
@@ -138,8 +138,8 @@ func PutTransaccion(w http.ResponseWriter, r *http.Request) {
 			}
 			MutacionDataBase(jsonbytes, func(data []byte) {
 				w.Header().Set("Content-Type", "application/json")
-				if data != nil {
-					fmt.Printf("%s", string(data))
+				if data == nil {
+					//fmt.Printf("%s", string(data))
 					w.Write([]byte(`{"result":"ok"}`))
 				} else {
 					w.Write([]byte(`{"result":"error"}`))

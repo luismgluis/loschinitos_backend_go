@@ -14,6 +14,33 @@ import (
 
 //-------------- API ENDPOINT ------------------//
 
+func GetProductoIDfromOldID(olduid string, fn FunctionBackString) {
+	q := fmt.Sprintf(`
+	{
+		productos(func: eq(PRODID,"%s")) {
+		  uid
+		  PRODID
+		}
+	}
+	`, olduid)
+
+	ConsultaDataBase(q, func(data []byte) {
+		ccc := Productos{}
+		err3312 := json.Unmarshal(data, &ccc)
+		if err3312 == nil {
+			prods := ccc.Productos
+			micliente := prods[0]
+			if micliente.UID != "" {
+				fn(micliente.UID)
+			} else {
+				fn("")
+			}
+		} else {
+			fn("")
+		}
+	})
+}
+
 // AllClientes returns todos los clientes en la DB
 func AllProducto(w http.ResponseWriter, r *http.Request) {
 	dg, cancel := getDgraphClient()
@@ -100,8 +127,8 @@ func PostProducto(w http.ResponseWriter, r *http.Request) {
 			}
 			MutacionDataBase(jsonbytes, func(data []byte) {
 				w.Header().Set("Content-Type", "application/json")
-				if data != nil {
-					fmt.Printf("%s", string(data))
+				if data == nil {
+					//fmt.Printf("%s", string(data))
 					w.Write([]byte(`{"result":"ok"}`))
 				} else {
 					w.Write([]byte(`{"result":"error"}`))
@@ -138,8 +165,8 @@ func PutProducto(w http.ResponseWriter, r *http.Request) {
 			}
 			MutacionDataBase(jsonbytes, func(data []byte) {
 				w.Header().Set("Content-Type", "application/json")
-				if data != nil {
-					fmt.Printf("%s", string(data))
+				if data == nil {
+					//fmt.Printf("%s", string(data))
 					w.Write([]byte(`{"result":"ok"}`))
 				} else {
 					w.Write([]byte(`{"result":"error"}`))

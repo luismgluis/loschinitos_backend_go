@@ -16,10 +16,10 @@ import (
 type CancelFunc func()
 type FunctionBackBytes func(data []byte)
 type FunctionBackString func(data string)
+type FunctionBackArrStrings func(data []string)
 
 func getDgraphClient() (*dgo.Dgraph, CancelFunc) {
 
-	//------------
 	direccion := host + ":" + strconv.Itoa(port)
 	conn, err := grpc.Dial(direccion, grpc.WithInsecure())
 	if err != nil {
@@ -27,33 +27,20 @@ func getDgraphClient() (*dgo.Dgraph, CancelFunc) {
 	}
 	dc := api.NewDgraphClient(conn)
 	dgraphClient := dgo.NewDgraphClient(dc)
-	//-----------
-	/*
-		conn, err := dgo.DialSlashEndpoint("https://gutsy-grape.us-west-2.aws.cloud.dgraph.io/graphql", "T1LEBKB4N6+iEdgv6oxYTiW9XQntVsTLzVTwjttyDr4=") //"EpUZOdIYZBGkPqo1BwkVfSJ8j9ALBdcrNBkD2PT21xk=")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer conn.Close()
-		dgraphClient := dgo.NewDgraphClient(api.NewDgraphClient(conn))
+	//------------
+	/**/
+	//graphql  /mutate /commit.
+	//https://gutsy-grape.us-west-2.aws.cloud.dgraph.io/query
+	// T1LEBKB4N6+iEdgv6oxYTiW9XQntVsTLzVTwjttyDr4=  ADMIN
+	// EpUZOdIYZBGkPqo1BwkVfSJ8j9ALBdcrNBkD2PT21xk=  CLIENT
 
-
-
-				local
-
-
+	/*conn, err := dgo.DialSlashEndpoint("https://gutsy-grape.us-west-2.aws.cloud.dgraph.io/query", "T1LEBKB4N6+iEdgv6oxYTiW9XQntVsTLzVTwjttyDr4=") //"EpUZOdIYZBGkPqo1BwkVfSJ8j9ALBdcrNBkD2PT21xk=")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+	dgraphClient := dgo.NewDgraphClient(api.NewDgraphClient(conn))
 	*/
-	// Perform login call. If the Dgraph cluster does not have ACL and
-	// enterprise features enabled, this call should be skipped.
-	/*
-		ctx := context.Background()
-		for {
-			// Keep retrying until we succeed or receive a non-retriable error.
-			err = dg.Login(ctx, "groot", "password")
-			if err == nil || !strings.Contains(err.Error(), "Please retry") {
-				break
-			}
-			time.Sleep(time.Second)
-		}*/
 	if err != nil {
 		log.Fatalf("While trying to login %v", err.Error())
 	}
@@ -262,22 +249,39 @@ func OldInsertNewCliente(clientef Cliente) {
 	fmt.Printf("%s\n", res)
 }
 
-func MutacionDataBase(bbb []byte, fn FunctionBackBytes) {
-
+func oganizarDB() {
 	dg, cancel := getDgraphClient()
 	defer cancel()
 
 	ctx := context.Background()
 
 	op := &api.Operation{
-		Schema: `name: string @index(exact) .
+		Schema: `
+		name: string @index(exact) .
 		avatar: string .
-		age: int .`,
+		age: int .  
+		price: int .
+		buyerid: string .
+		ip: string .
+		device: string .
+		produtids: [string] .
+		TRANSID: string @index(exact) .
+		PRODID: string @index(exact) .
+		UIDOLD: string @index(exact) .
+		`,
 	}
 	err_alter := dg.Alter(ctx, op)
 	if err_alter != nil {
 		log.Fatal(err_alter)
 	}
+}
+
+func MutacionDataBase(bbb []byte, fn FunctionBackBytes) {
+
+	dg, cancel := getDgraphClient()
+	defer cancel()
+
+	ctx := context.Background()
 
 	txn := dg.NewTxn()
 	defer txn.Discard(ctx)
