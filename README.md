@@ -63,4 +63,14 @@ func dataFromInternet(w http.ResponseWriter, r *http.Request) {
     analisisTransaccionesX(transacciones, fechaInt, true)
 ```
 
+<p>No usamos el ID original de la importacion, generamos uno nuevo desde la base de datos!. El ID original lo guardamos para referenciarlo y tenemos funciones internas para ello en el proceso de importacion pero dejamos de lado ese ID original en la app</p>
+
+por lo anterior el endpoint /cliente/{id del cliente} solo funcionara con IDs asignados internamente.
+
+puede comprobar todos los clientes con 
+
+```
+http://localhost:3000/clientes
+```
+
 Es importante realizar la importacion con en endpoint /importx antes de usar el frontend en vue.
