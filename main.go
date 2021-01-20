@@ -30,6 +30,7 @@ func routers() *chi.Mux {
 	//cliente
 	router.Get("/clientes", AllClientes)
 	router.Get("/cliente/{id}", GetClienteByID)
+	router.Get("/clientedetails/{id}", GetClienteDetailsByID)
 	router.Post("/cliente/{id}", PutCliente)
 	router.Delete("/cliente/{id}", DeleteCliente)
 	router.Post("/cliente", PostCliente)
@@ -47,7 +48,9 @@ func routers() *chi.Mux {
 	router.Post("/producto", PostProducto)
 
 	//import
+	router.Get("/importx/{date}", dataFromInternet)
 	router.Get("/importx", dataFromInternet)
+
 	return router
 }
 

@@ -28,16 +28,22 @@ func GetProductoIDfromOldID(olduid string, fn FunctionBackString) {
 		ccc := Productos{}
 		err3312 := json.Unmarshal(data, &ccc)
 		if err3312 == nil {
-			prods := ccc.Productos
-			micliente := prods[0]
-			if micliente.UID != "" {
-				fn(micliente.UID)
+			if ccc.Productos != nil {
+				prods := ccc.Productos
+				micliente := prods[0]
+				if micliente.UID != "" {
+					fn(micliente.UID)
+				} else {
+					fn("")
+				}
 			} else {
 				fn("")
 			}
+
 		} else {
 			fn("")
 		}
+
 	})
 }
 
@@ -79,6 +85,29 @@ func AllProducto(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func GetProductoByIDData(idprod string, fn FunctionBackProducto) {
+	query := fmt.Sprintf(`
+	{
+		productos(func: uid(%s)){
+			uid
+			name
+			price
+			PRODID
+			date
+		}
+	}
+	`, idprod)
+	ConsultaDataBase(query, func(data []byte) {
+		prods := Productos{}
+		err33 := json.Unmarshal(data, &prods)
+		if err33 == nil {
+			fn(prods.Productos[0])
+		} else {
+			fn(Producto{})
+		}
+	})
+}
+
 func GetProductoByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id") //conseguimos el ID pasado por URL
 	fmt.Printf("%s", id)
@@ -87,7 +116,9 @@ func GetProductoByID(w http.ResponseWriter, r *http.Request) {
 		cliente(func: uid(%s)){
 			uid
 			name
-			age
+			price
+			PRODID
+			date
 		}
 	}
 	`, id)

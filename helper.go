@@ -44,6 +44,15 @@ func concat(text1 string, text2 string) string {
 	return str_concat
 }
 
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
 func httpReques(url string, fn FunctionBackBytes) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -54,7 +63,7 @@ func httpReques(url string, fn FunctionBackBytes) {
 	fn(body)
 }
 
-func analisisClientesJson(jsontext string) {
+func analisisClientesJson(jsontext string, fecha int) {
 	//jsontext = `[{"id":"1b4dc721","name":"Zsa","age":67},{"id":"59ee2a09","name":"Fiske","age":79},{"id":"b8b70557","name":"Brest","age":85},{"id":"7decab7f","name":"Pages","age":45},{"id":"994bec35","name":"Bohlin","age":63},{"id":"243693e6","name":"Goldsmith","age":68},{"id":"b9606046","name":"Mattland","age":28},{"id":"caebe766","name":"Hersch","age":76},{"id":"d5763a87","name":"Peppel","age":55},{"id":"9b6b8e4f","name":"Kass","age":59},{"id":"56963771","name":"Patrick","age":35},{"id":"50f09cf3","name":"Persian","age":85},{"id":"d03d560c","name":"Binette","age":58},{"id":"5fe59670","name":"Bergin","age":42},{"id":"b9867908","name":"Borchert","age":44},{"id":"12359714","name":"Yonah","age":78},{"id":"bcbe455d","name":"Phenica","age":71},{"id":"9e1a2e49","name":"Zenobia","age":49},{"id":"cc5ab785","name":"Isiah","age":61},{"id":"7818d2d2","name":"Graehl","age":30},{"id":"594bca8a","name":"Zildjian","age":60},{"id":"2e89fe10","name":"Deena","age":24},{"id":"87267f51","name":"Pfeffer","age":67},{"id":"8b2fc525","name":"Hirza","age":31},{"id":"6baaba10","name":"Hoopen","age":40},{"id":"632354b2","name":"LaRue","age":62},{"id":"ece1bb7e","name":"Marteena","age":50},{"id":"20e32ed7","name":"Syl","age":61},{"id":"88cee7ca","name":"Jannery","age":66},{"id":"53db951c","name":"Richer","age":20}]`
 	rr := `{"id":"1b4dc721","name":"Zsa","age":67}`
 	type Clientex struct {
@@ -83,6 +92,7 @@ func analisisClientesJson(jsontext string) {
 			UIDOLD: cli.UID,
 			Name:   cli.Name,
 			Age:    cli.Age,
+			Date:   fecha,
 		}
 		ArrClientes = append(ArrClientes, ncliente)
 		total++
@@ -134,7 +144,7 @@ func analisisClientesJson(jsontext string) {
 
 }
 
-func analisisProductosComillas(texto string, sobreescribir bool) {
+func analisisProductosComillas(texto string, fecha int, sobreescribir bool) {
 	fmt.Println(texto)
 	filas := strings.Split(texto, "\n")
 	productos := []Producto{}
@@ -150,6 +160,7 @@ func analisisProductosComillas(texto string, sobreescribir bool) {
 				PRODID: datos[0],
 				Name:   datos[1],
 				Price:  p,
+				Date:   fecha,
 			}
 			productos = append(productos, prod)
 			total++
@@ -254,11 +265,15 @@ func analisisProductosComillas(texto string, sobreescribir bool) {
 
 }
 
-func analisisTransaccionesX(texto string) {
+func replaceAtIndex1(str string, replacement rune, index int) string {
+	out := []rune(str)
+	out[index] = replacement
+	return string(out)
+}
+
+func analisisTransaccionesX(texto string, fecha int, sobreescribir bool) {
 	transacciones := []Transaccion{}
-	saltar := false
 	filas := []string{}
-	fila := ""
 	counter := 0
 	normalizarProductosIDS := func(arrproductos []string, fn FunctionBackArrStrings) {
 		newarr := []string{}
@@ -281,16 +296,21 @@ func analisisTransaccionesX(texto string) {
 		arrT := []Transaccion{}
 		arrT = append(arrT, t) //le metemos la transaccion actual a ese arreglo
 		GetClienteIDfromOldID(t.BuyerID, func(uidcliente string) {
-			cli := ClienteRicacho{UID: uidcliente,
-				Transacciones: arrT,
-			}
-			jsonbytes, err := json.Marshal(cli)
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				MutacionDataBase(jsonbytes, func(data []byte) {
-					fmt.Println(string(data))
-				})
+			if uidcliente != "" {
+				t.BuyerID = uidcliente
+				t.Buyer = Cliente{UID: t.BuyerID}
+				cli := ClienteRicacho{UID: uidcliente,
+					Transacciones: arrT,
+				}
+				jsonbytes, err := json.Marshal(cli)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					MutacionDataBase(jsonbytes, func(data []byte) {
+						//fmt.Println(string(data))
+						fmt.Println(t.BuyerID + " ingresado, van " + strconv.Itoa(counter))
+					})
+				}
 			}
 		})
 
@@ -311,13 +331,30 @@ func analisisTransaccionesX(texto string) {
 			yaesta := false
 			if data != nil {
 				if algo != `{"transacciones":[]}` {
-					yaesta = true
+					if sobreescribir {
+						ppp := Transacciones{}
+						err33 := json.Unmarshal(data, &ppp)
+						if err33 == nil {
+							if t.UID != "" {
+								t.UID = ppp.Transacciones[0].UID
+								fmt.Println("Actualizando transaccion: " + t.UID)
+							}
+						}
+					} else {
+						yaesta = true
+					}
+
 				}
 			}
 			if !yaesta {
 				transacciones = append(transacciones, t) //POS SI QUEREMOS RETORNARLAS
 				normalizarProductosIDS(t.ProductIDS, func(data []string) {
 					t.ProductIDS = data
+					ps := Productos{}
+					for i := range data { //metemos con su clase para indexacion
+						ps.Productos = append(ps.Productos, Producto{UID: data[i]})
+					}
+					t.Products = ps
 					actualizarCliente(t)
 				})
 			}
@@ -328,8 +365,54 @@ func analisisTransaccionesX(texto string) {
 		})
 	}
 	//recorreomos carater a carater
+
 	conteochats := 0
+	type remo struct {
+		indice int
+		runa   rune
+	}
+	losremplazados := []remo{}
 	for i, r := range texto { //recorremos todo eso letra por letra
+		if r == 0 { //si el caracter es extraño
+			conteochats++
+			losremplazados = append(losremplazados, remo{indice: i, runa: r})
+		}
+	}
+	out := []rune(texto)
+	separadorRune := []rune("|")
+	for i := range losremplazados { //remplazamos los caracteres raros por barritas
+		nremo := losremplazados[i]
+		out[nremo.indice] = separadorRune[0]
+	}
+	texto = string(out)
+	fmt.Println("Normalizamos " + strconv.Itoa(conteochats) + " caracteres")
+	filas = strings.Split(texto, "||")
+	fmt.Println("Vamos a procesar " + strconv.Itoa(len(filas)) + " transacciones")
+	for i := range filas {
+		fila := filas[i]
+		Rfila := strings.Split(fila, "|")
+		if len(Rfila) >= 4 {
+			//#00006004cf8c|1d646993|143.125.42.1|android|(a1122fc4,1a56a1bf
+			ppp := Rfila[4]
+			ppp = strings.ReplaceAll(ppp, "(", "")
+			ppp = strings.ReplaceAll(ppp, ")", "")
+			prodsids := strings.Split(ppp, ",")
+			ntrans := Transaccion{
+				UID:        "_:elid",
+				TRANSID:    Rfila[0],
+				BuyerID:    Rfila[1],
+				IP:         Rfila[2],
+				Device:     Rfila[3],
+				ProductIDS: prodsids,
+				Date:       fecha,
+			}
+			uploadTransaccion(ntrans)
+			fmt.Println(i)
+		}
+	}
+
+	//---forma anterior pero muy demorada
+	/*for i, r := range texto { //recorremos todo eso letra por letra
 		//fmt.Println(i)
 		conteochats = i
 		if r == 0 { //esto indica el caracter raro
@@ -349,6 +432,7 @@ func analisisTransaccionesX(texto string) {
 						IP:         Rfila[2],
 						Device:     Rfila[3],
 						ProductIDS: prodsids,
+						Date:       fecha,
 					}
 					uploadTransaccion(ntrans)
 					filas = append(filas, fila)
@@ -367,5 +451,5 @@ func analisisTransaccionesX(texto string) {
 		}
 
 	}
-	fmt.Println(conteochats)
+	fmt.Println(conteochats)*/
 }

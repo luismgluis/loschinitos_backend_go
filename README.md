@@ -39,3 +39,28 @@ Tener en cuenta que el archivo main.go se ejecuta el servidor en el puerto 3000
 ```
 http.ListenAndServe(":3000", Logger())
 ```
+
+Para fines especificos fue creado el endpoint /importx
+el cual importa los datos desde urls especificas con diferente complejidad cada una, clientes en JSON, productos separado por comillas y saltos de linea y transacciones en un archivo desconocido con separadores desconocidos
+
+```
+http://localhost:3000/importx
+```
+
+adicionalmente las urls especificas admiten la posibilidad de pasar como parametro date la fecha en formato UNIX y lo podemos usar nosotros tambien, por ejemplo para extraer los datos de 20/01/2020 usamos 1611118800 de la siguiente forma
+
+```
+http://localhost:3000/importx/1611118800
+```
+
+la importacion de productos en la funcion analisisTransaccionesX puede establecer si quiere que se sobre escriban o no las transacciones por default es true
+
+```
+func dataFromInternet(w http.ResponseWriter, r *http.Request) {
+  .
+  ..
+  ...
+    analisisTransaccionesX(transacciones, fechaInt, true)
+```
+
+Es importante realizar la importacion con en endpoint /importx antes de usar el frontend en vue.

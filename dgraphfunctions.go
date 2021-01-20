@@ -18,6 +18,14 @@ type FunctionBackBytes func(data []byte)
 type FunctionBackString func(data string)
 type FunctionBackArrStrings func(data []string)
 
+type FunctionBackProducto func(data Producto)
+type FunctionBackCliente func(data Cliente)
+type FunctionBackTransaccion func(data Transaccion)
+
+type FunctionBackProductos func(data Productos)
+type FunctionBackClientes func(data Clientes)
+type FunctionBackTransacciones func(data Transacciones)
+
 func getDgraphClient() (*dgo.Dgraph, CancelFunc) {
 
 	direccion := host + ":" + strconv.Itoa(port)
@@ -264,7 +272,9 @@ func oganizarDB() {
 		buyerid: string .
 		ip: string .
 		device: string .
+		date: int @index(int) .
 		produtids: [string] .
+		transacciones: [uid] @reverse .
 		TRANSID: string @index(exact) .
 		PRODID: string @index(exact) .
 		UIDOLD: string @index(exact) .
@@ -374,7 +384,7 @@ func ConsultaDataBase(query string, fn FunctionBackBytes) {
 	//s := string(`{"operation": "get", "key": "example"}`)
 
 	if err == nil {
-		fmt.Printf("%s\n", res.Json)
+		//fmt.Printf("%s\n", res.Json)
 		fn(res.Json)
 	} else {
 		fn(nil)

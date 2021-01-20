@@ -27,16 +27,21 @@ func GetClienteIDfromOldID(olduid string, fn FunctionBackString) {
 		ccc := Clientes{}
 		err3312 := json.Unmarshal(data, &ccc)
 		if err3312 == nil {
-			clientes := ccc.Clientes
-			micliente := clientes[0]
-			if micliente.UID != "" {
-				fn(micliente.UID)
+			if ccc.Clientes != nil {
+				clientes := ccc.Clientes
+				micliente := clientes[0]
+				if micliente.UID != "" {
+					fn(micliente.UID)
+				} else {
+					fn("")
+				}
 			} else {
 				fn("")
 			}
 		} else {
 			fn("")
 		}
+
 	})
 }
 
@@ -51,14 +56,11 @@ func AllClientes(w http.ResponseWriter, r *http.Request) {
 	defer txn.Discard(ctx)
 	q := `
 	  {
-		clientes(func: has(name)) {
+		clientes(func: has(UIDOLD)) {
 		  name
 		  age
 		  uid
-		  followers {
-			uid
-			name
-		  }
+		  UIDOLD
 		}
 	  } 
 	  `
@@ -87,12 +89,96 @@ func GetClienteByID(w http.ResponseWriter, r *http.Request) {
 			uid
 			name
 			age
+			UIDOLD
 		}
 	}
 	`, id)
 	ConsultaDataBaseJson(query, func(data string) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(data))
+	})
+}
+
+func GetClienteDetailsByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id") //conseguimos el ID pasado por URL
+	fmt.Printf("%s", id)
+	type ClienteDetallado struct {
+		Cliente               Cliente       `json:"cliente,omitempty"`
+		Transacciones         []Transaccion `json:"transacciones,omitempty"`
+		Productos             []Producto    `json:"productos,omitempty"`
+		Clientesporip         []Cliente     `json:"clientesporip,omitempty"`
+		ProductosRecomendados []Producto    `json:"productosrecomendados,omitempty"`
+	}
+	supercli := ClienteDetallado{}
+	query := fmt.Sprintf(`
+	{
+		clientes(func: uid(%s)){
+			uid
+			name
+			age
+			UIDOLD
+			transacciones {
+			  uid
+			  TRANSID
+			  buyerid
+			  ip
+			  device
+			  produtids
+			  products
+			  date
+			}
+		}
+	}
+	`, id)
+	retornarError := func() {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"result":"error"}`))
+	}
+	ConsultaDataBase(query, func(data []byte) {
+		clis := Clientes{}
+		err33 := json.Unmarshal(data, &clis)
+		if err33 != nil {
+			retornarError()
+		} else {
+			tss := clis.Clientes[0].Transacciones
+			supercli.Cliente = clis.Clientes[0]
+			supercli.Transacciones = tss
+
+			productosporrevisar := []string{}
+			for i := range tss {
+				transa := tss[i]
+				for ii := range transa.ProductIDS {
+					idprod := transa.ProductIDS[ii]
+					if !contains(productosporrevisar, idprod) {
+						productosporrevisar = append(productosporrevisar, idprod)
+					}
+				}
+			}
+
+			prodsrevisados := []Producto{}
+			realizados := 0
+			for i := range productosporrevisar {
+				id := productosporrevisar[i]
+
+				GetProductoByIDData(id, func(data Producto) {
+					prodsrevisados = append(prodsrevisados, data)
+					realizados++
+					if len(productosporrevisar) == realizados {
+						supercli.Productos = prodsrevisados
+						jsonbytes, err := json.Marshal(supercli)
+						if err == nil {
+							w.Header().Set("Content-Type", "application/json")
+							w.Write(jsonbytes)
+						} else {
+							retornarError()
+						}
+
+					}
+				})
+			}
+
+		}
+
 	})
 }
 
