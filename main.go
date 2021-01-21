@@ -36,6 +36,7 @@ func routers() *chi.Mux {
 	router.Post("/cliente", PostCliente)
 	//transaccion
 	router.Get("/transacciones", AllTransaccion)
+	router.Get("/transaccionesrange/{range}", AllTransaccionesRange)
 	router.Get("/transaccion/{id}", GetTransaccionByID)
 	router.Post("/transaccion/{id}", PutTransaccion)
 	router.Delete("/transaccion/{id}", DeleteTransaccion)

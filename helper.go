@@ -53,6 +53,19 @@ func contains(s []string, e string) bool {
 	return false
 }
 
+//OJO QUE ESTO DEVUELVE CERO SI FALLA
+func parseInt(ss string) int {
+	aa, err := strconv.Atoi(ss)
+	if err != nil {
+		aa = 0
+	}
+	return aa
+}
+func parseString(ss int) string {
+	aa := strconv.Itoa(ss)
+	return aa
+}
+
 func httpReques(url string, fn FunctionBackBytes) {
 	resp, err := http.Get(url)
 	if err != nil {

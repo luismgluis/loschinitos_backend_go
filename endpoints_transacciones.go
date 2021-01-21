@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi"
 
@@ -50,6 +51,37 @@ func AllTransaccion(w http.ResponseWriter, r *http.Request) {
 	} else {
 		respondwithJSON(w, http.StatusOK, `{"result":"error"}`)
 	}
+}
+func AllTransaccionesRange(w http.ResponseWriter, r *http.Request) {
+	rango := chi.URLParam(r, "range") //conseguimos el ID pasado por URL
+	fmt.Printf("%s", rango)
+
+	arrgo := strings.Split(rango, "-")
+	inicio := parseInt(arrgo[0])
+	final := parseInt(arrgo[1])
+
+	query := fmt.Sprintf(`
+	{
+		transacciones(func: has(UIDOLD)) {
+			UIDOLD
+			uid
+			transacciones @filter(ge(date, "$s") AND le(date, "$a")) {
+				buyerid
+				TRANSID
+				uid
+				date
+			}
+		}
+	}`, parseString(inicio), parseString(final))
+	fmt.Println(query)
+	ConsultaDataBase(query, func(data []byte) {
+		if data == nil {
+			respondwithJSON(w, http.StatusOK, `{"result":"error"}`)
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(data)
+		}
+	})
 }
 
 func GetTransaccionByID(w http.ResponseWriter, r *http.Request) {

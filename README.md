@@ -20,9 +20,9 @@ docker run -it -p 6080:6080 -p 8080:8080 -p 9080:9080 -p 8000:8000 -v /mnt/dgrap
 
 ```
 
-Puede ver otras alternativas a docker en <a href="https://dgraph.io/downloads" alt="Dgraph/Downloads"></a>, aunque personalmente no tuve suerte con las demas soluciones, solo con docker.
+Puede ver otras alternativas a docker en <a href="https://dgraph.io/downloads" alt="Dgraph/Downloads">aqui</a>, aunque personalmente no tuve suerte con las demas soluciones, solo con docker.
 
-Puede obtener mas informacion de como iniciar una maquina Dgraph en <a href="https://dgraph.io/docs/tutorial-1/" alt="tutorial en la pagina oficial"></a>.
+Puede obtener mas informacion de como iniciar una maquina Dgraph en <a href="https://dgraph.io/docs/tutorial-1/" alt="tutorial en la pagina oficial">Pagina oficial</a>.
 
 Para ejecutar el codigo se esta usando Golang en:
 ```
