@@ -201,7 +201,7 @@ func GetClienteDetailsByID(w http.ResponseWriter, r *http.Request) {
 						GetTransaccionesAsociadasIP(unaip, func(data Transacciones) {
 							supercli.Transaccionesporip = data.Transacciones
 							realizados = 0
-
+							asegurador := []string{}
 							terminar := func(supercli ClienteDetallado) {
 								jsonbytes, err := json.Marshal(supercli)
 								if err == nil {
@@ -224,7 +224,10 @@ func GetClienteDetailsByID(w http.ResponseWriter, r *http.Request) {
 									//tambien podriamos comparar con las transacciones del cliente para sugerir productos que no
 									//hubiera comprado antes o productos en el mismo rango de precio
 									GetProductoByIDData(trr.ProductIDS[0], func(productoresult Producto) {
-										supercli.ProductosRecomendados = append(supercli.ProductosRecomendados, productoresult)
+										if !contains(asegurador, productoresult.UID) {
+											supercli.ProductosRecomendados = append(supercli.ProductosRecomendados, productoresult)
+											asegurador = append(asegurador, productoresult.UID)
+										}
 										realizados++
 										if len(supercli.Transaccionesporip) == realizados {
 											terminar(supercli)
