@@ -200,17 +200,44 @@ func GetClienteDetailsByID(w http.ResponseWriter, r *http.Request) {
 						supercli.Productos = prodsrevisados
 						GetTransaccionesAsociadasIP(unaip, func(data Transacciones) {
 							supercli.Transaccionesporip = data.Transacciones
-							jsonbytes, err := json.Marshal(supercli)
-							if err == nil {
-								w.Header().Set("Content-Type", "application/json")
-								w.Write(jsonbytes)
-							} else {
-								retornarError()
+							realizados = 0
+
+							terminar := func(supercli ClienteDetallado) {
+								jsonbytes, err := json.Marshal(supercli)
+								if err == nil {
+									w.Header().Set("Content-Type", "application/json")
+									w.Write(jsonbytes)
+								} else {
+									retornarError()
+								}
+							}
+							//reseteamos el contador para reusarlo
+							for ii := range supercli.Transaccionesporip { //analizamos las transacciones para obtener un producto de los comprados
+								trr := supercli.Transaccionesporip[ii]
+								if len(trr.ProductIDS) == 0 {
+									realizados++
+									if len(supercli.Transaccionesporip) == realizados {
+										terminar(supercli)
+									}
+								} else {
+									//aqui podriamos consultar todos los productos y sugerir el mas costoso o el mas barato
+									//tambien podriamos comparar con las transacciones del cliente para sugerir productos que no
+									//hubiera comprado antes o productos en el mismo rango de precio
+									GetProductoByIDData(trr.ProductIDS[0], func(productoresult Producto) {
+										supercli.ProductosRecomendados = append(supercli.ProductosRecomendados, productoresult)
+										realizados++
+										if len(supercli.Transaccionesporip) == realizados {
+											terminar(supercli)
+										}
+									})
+								}
+
 							}
 						})
 
 					}
 				})
+
 			}
 
 		}
