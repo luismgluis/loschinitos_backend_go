@@ -23,7 +23,7 @@ type FunctionBackCliente func(data Cliente)
 type FunctionBackTransaccion func(data Transaccion)
 
 type FunctionBackProductos func(data Productos)
-type FunctionBackClientes func(data Clientes)
+type FunctionBackClientes func(data []Clientes)
 type FunctionBackTransacciones func(data Transacciones)
 
 func getDgraphClient() (*dgo.Dgraph, CancelFunc) {
@@ -270,7 +270,7 @@ func oganizarDB() {
 		age: int .  
 		price: int .
 		buyerid: string .
-		ip: string .
+		ip: string @index(exact) .
 		device: string .
 		date: int @index(int) .
 		produtids: [string] .

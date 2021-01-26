@@ -62,6 +62,8 @@ func dataFromInternet(w http.ResponseWriter, r *http.Request) {
 		s := t1.Unix()
 		fecha = strconv.FormatInt(s, 10)
 		fechaInt = int(s)
+	} else {
+		fechaInt = parseInt(fecha)
 	}
 	fmt.Println("La fecha a buscar es =>", fecha)
 	oganizarDB() //establecemos configuraciones en la bd para que funcionen los datos
@@ -70,6 +72,7 @@ func dataFromInternet(w http.ResponseWriter, r *http.Request) {
 	// 19 - 1611032400
 	// 20 - 1611118800
 	// 21 - 1611205200
+
 	httpReques("https://kqxty15mpg.execute-api.us-east-1.amazonaws.com/buyers?date="+fecha, func(data1 []byte) {
 		clientes := string(data1)
 		analisisClientesJson(clientes, fechaInt)

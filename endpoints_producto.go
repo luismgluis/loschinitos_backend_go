@@ -88,7 +88,7 @@ func AllProducto(w http.ResponseWriter, r *http.Request) {
 func GetProductoByIDData(idprod string, fn FunctionBackProducto) {
 	query := fmt.Sprintf(`
 	{
-		productos(func: uid(%s)){
+		productos(func: uid(%s)) @filter(has(price) AND eq(dgraph.type,["Producto"])) {
 			uid
 			name
 			price

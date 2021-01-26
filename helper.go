@@ -106,6 +106,7 @@ func analisisClientesJson(jsontext string, fecha int) {
 			Name:   cli.Name,
 			Age:    cli.Age,
 			Date:   fecha,
+			DType:  []string{"Cliente"},
 		}
 		ArrClientes = append(ArrClientes, ncliente)
 		total++
@@ -174,6 +175,7 @@ func analisisProductosComillas(texto string, fecha int, sobreescribir bool) {
 				Name:   datos[1],
 				Price:  p,
 				Date:   fecha,
+				DType:  []string{"Producto"},
 			}
 			productos = append(productos, prod)
 			total++
@@ -302,16 +304,36 @@ func analisisTransaccionesX(texto string, fecha int, sobreescribir bool) {
 
 	}
 	actualizarCliente := func(t Transaccion) {
+		//fmt.Println(t.BuyerID)
 		type ClienteRicacho struct {
 			UID           string        `json:"uid,omitempty"`
 			Transacciones []Transaccion `json:"transacciones,omitempty"`
 		}
-		arrT := []Transaccion{}
-		arrT = append(arrT, t) //le metemos la transaccion actual a ese arreglo
+		GetClienteIDfromOldID(t.BuyerID, func(cliente Cliente) {
+			if cliente.UID != "" && cliente.Name != "" {
+				cliente.Transacciones = append(cliente.Transacciones, t)
+
+				jsonbytes, err := json.Marshal(cliente)
+				if err != nil {
+					fmt.Println(err)
+				} else {
+					MutacionDataBase(jsonbytes, func(data []byte) {
+						//fmt.Println(string(data))
+						fmt.Println(t.BuyerID + " ingresado, van " + strconv.Itoa(counter))
+					})
+				}
+			}
+		})
+		/*type ClienteRicacho struct {
+			UID           string        `json:"uid,omitempty"`
+			Transacciones []Transaccion `json:"transacciones,omitempty"`
+		}
 		GetClienteIDfromOldID(t.BuyerID, func(uidcliente string) {
 			if uidcliente != "" {
 				t.BuyerID = uidcliente
-				t.Buyer = Cliente{UID: t.BuyerID}
+				t.Buyer = Cliente{UID: t.BuyerID, DType: []string{"Cliente"}}
+				arrT := []Transaccion{}
+				arrT = append(arrT, t) //le metemos la transaccion actual a ese arreglo
 				cli := ClienteRicacho{UID: uidcliente,
 					Transacciones: arrT,
 				}
@@ -326,7 +348,7 @@ func analisisTransaccionesX(texto string, fecha int, sobreescribir bool) {
 				}
 			}
 		})
-
+		*/
 	}
 
 	uploadTransaccion := func(t Transaccion) {
@@ -340,7 +362,7 @@ func analisisTransaccionesX(texto string, fecha int, sobreescribir bool) {
 		`, t.TRANSID)
 		ConsultaDataBase(query, func(data []byte) {
 			algo := string(data)
-			fmt.Println(algo)
+			//fmt.Println(algo)
 			yaesta := false
 			if data != nil {
 				if algo != `{"transacciones":[]}` {
@@ -350,7 +372,7 @@ func analisisTransaccionesX(texto string, fecha int, sobreescribir bool) {
 						if err33 == nil {
 							if t.UID != "" {
 								t.UID = ppp.Transacciones[0].UID
-								fmt.Println("Actualizando transaccion: " + t.UID)
+								//fmt.Println("Actualizando transaccion: " + t.UID)
 							}
 						}
 					} else {
@@ -418,9 +440,10 @@ func analisisTransaccionesX(texto string, fecha int, sobreescribir bool) {
 				Device:     Rfila[3],
 				ProductIDS: prodsids,
 				Date:       fecha,
+				DType:      []string{"Transaccion"},
 			}
 			uploadTransaccion(ntrans)
-			fmt.Println(i)
+			//fmt.Println(i)
 		}
 	}
 
