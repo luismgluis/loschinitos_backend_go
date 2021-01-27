@@ -291,13 +291,43 @@ func PostCliente(w http.ResponseWriter, r *http.Request) {
 // PutCliente actualiza un cliente
 func PutCliente(w http.ResponseWriter, r *http.Request) {
 
-	cliente := new(Cliente)
+	newcli := new(Cliente)
 	//esto nos ayuda a asignar los datos enviados desde frontend a el struct
-	if errs := binding.Bind(r, cliente); errs != nil {
+	if errs := binding.Bind(r, newcli); errs != nil {
 		http.Error(w, errs.Error(), http.StatusBadRequest)
 		return
 	}
-	query := fmt.Sprintf(`
+
+	GetClienteByIDData(newcli.UID, func(oldclien Cliente) {
+		w.Header().Set("Content-Type", "application/json")
+		if newcli.UID != "" {
+			if newcli.UID != "" {
+				if newcli.Name != oldclien.Name && newcli.Name != "" {
+					oldclien.Name = newcli.Name
+				}
+				if newcli.Age != oldclien.Age && newcli.Age != 0 {
+					oldclien.Age = newcli.Age
+				}
+				jsonbytes, err := json.Marshal(oldclien)
+				if err != nil {
+					log.Fatal(err)
+				}
+				MutacionDataBase(jsonbytes, func(data []byte) {
+					if data == nil {
+						w.Write([]byte(`{"result":"ok"}`))
+					} else {
+						w.Write([]byte(`{"result":"error"}`))
+					}
+				})
+			} else {
+				w.Write([]byte(`{"result":"error"}`))
+			}
+
+		} else {
+			w.Write([]byte(`{"result":"error"}`))
+		}
+	})
+	/*query := fmt.Sprintf(`
 	{
 		cliente(func: uid(%s)){
 			uid
@@ -326,7 +356,7 @@ func PutCliente(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.Write([]byte(`{"result":"error"}`))
 		}
-	})
+	})*/
 }
 
 // DeleteCliente remove a spesific post
