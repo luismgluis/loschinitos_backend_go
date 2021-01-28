@@ -52,6 +52,73 @@ func AllTransaccion(w http.ResponseWriter, r *http.Request) {
 		respondwithJSON(w, http.StatusOK, `{"result":"error"}`)
 	}
 }
+
+func AllTransaccionesRangeData(inicio int, final int, fn FunctionBackTransacciones) {
+
+	query := `
+	{
+		transacciones(func: eq(dgraph.type,["Transaccion"]), first: 1000 )  {
+			uid
+			TRANSID
+			buyerid
+			buyer {
+				uid
+				name
+			}
+			date
+			ip
+			device
+			produtids
+		}
+	}
+	`
+	/* //Deberiamos realizar una consulta de este tipo peeero aun no logro que funcione
+		query := fmt.Sprintf(`
+		`, parseString(inicio), parseString(final)) .... -> query ->
+		{
+			transacciones(func: eq(dgraph.type,["Transaccion"])) @filter( ge(date,16) AND le(date,1611118800) )  {
+				uid
+				TRANSID
+				buyerid
+				buyer {
+					uid
+					name
+				}
+				date
+				ip
+				device
+				produtids
+			}
+	}
+	*/
+	fmt.Println(query)
+	ConsultaDataBase(query, func(data []byte) {
+		trans := Transacciones{}
+		err33 := json.Unmarshal(data, &trans)
+		if err33 == nil {
+			transaccionesO := trans.Transacciones
+			transacciones := []Transaccion{}
+			tra := []Transaccion{}
+			for i := range transaccionesO {
+				t := transaccionesO[i]
+				if t.Date <= final && t.Date >= inicio {
+					transacciones = append(transacciones, t)
+				}
+			}
+			for i := range transacciones {
+				t := transacciones[i]
+				GetClienteIDfromOldID(t.BuyerID, func(data Cliente) {
+					t.Buyer = data
+					tra = append(tra, t)
+					if len(transacciones) == len(tra) {
+						fn(Transacciones{Transacciones: tra})
+					}
+				})
+			}
+		}
+	})
+}
+
 func AllTransaccionesRange(w http.ResponseWriter, r *http.Request) {
 	rango := chi.URLParam(r, "range") //conseguimos el ID pasado por URL
 	fmt.Printf("%s", rango)
@@ -59,27 +126,13 @@ func AllTransaccionesRange(w http.ResponseWriter, r *http.Request) {
 	arrgo := strings.Split(rango, "-")
 	inicio := parseInt(arrgo[0])
 	final := parseInt(arrgo[1])
-
-	query := fmt.Sprintf(`
-	{
-		transacciones(func: has(UIDOLD)) {
-			UIDOLD
-			uid
-			transacciones @filter(ge(date, "$s") AND le(date, "$a")) {
-				buyerid
-				TRANSID
-				uid
-				date
-			}
-		}
-	}`, parseString(inicio), parseString(final))
-	fmt.Println(query)
-	ConsultaDataBase(query, func(data []byte) {
-		if data == nil {
-			respondwithJSON(w, http.StatusOK, `{"result":"error"}`)
+	AllTransaccionesRangeData(inicio, final, func(data Transacciones) {
+		jsonbytes, err := json.Marshal(data)
+		if err != nil {
+			log.Fatal(err)
 		} else {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write(data)
+			w.Write(jsonbytes)
 		}
 	})
 }
