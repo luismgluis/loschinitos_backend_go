@@ -57,8 +57,13 @@ func AllTransaccionesRangeData(inicio int, final int, fn FunctionBackTransaccion
 
 	query := `
 	{
-		transacciones(func: eq(dgraph.type,["Transaccion"]), first: 1000 )  {
+		transacciones(func: eq(dgraph.type,["Transaccion"]), first: 100 )  {
 			uid
+			date
+		}
+	}
+	`
+	/* //Deberiamos realizar una consulta de este tipo peeero aun no logro que funcione
 			TRANSID
 			buyerid
 			buyer {
@@ -69,10 +74,6 @@ func AllTransaccionesRangeData(inicio int, final int, fn FunctionBackTransaccion
 			ip
 			device
 			produtids
-		}
-	}
-	`
-	/* //Deberiamos realizar una consulta de este tipo peeero aun no logro que funcione
 		query := fmt.Sprintf(`
 		`, parseString(inicio), parseString(final)) .... -> query ->
 		{
@@ -99,7 +100,7 @@ func AllTransaccionesRangeData(inicio int, final int, fn FunctionBackTransaccion
 			transaccionesO := trans.Transacciones
 			transacciones := []Transaccion{}
 			tra := []Transaccion{}
-			for i := range transaccionesO {
+			for i := range transaccionesO { //con esto hacemos el filtro que no logramos aun en la query
 				t := transaccionesO[i]
 				if t.Date <= final && t.Date >= inicio {
 					transacciones = append(transacciones, t)
@@ -107,9 +108,8 @@ func AllTransaccionesRangeData(inicio int, final int, fn FunctionBackTransaccion
 			}
 			for i := range transacciones {
 				t := transacciones[i]
-				GetClienteIDfromOldID(t.BuyerID, func(data Cliente) {
-					t.Buyer = data
-					tra = append(tra, t)
+				GetTransaccionByIDData(t.UID, func(traaa Transaccion) {
+					tra = append(tra, traaa)
 					if len(transacciones) == len(tra) {
 						fn(Transacciones{Transacciones: tra})
 					}
@@ -141,7 +141,7 @@ func GetTransaccionByIDData(idtrans string, fn FunctionBackTransaccion) {
 
 	query := fmt.Sprintf(`
 	{
-		transacciones(func: uid(%s)) {
+		transacciones(func: uid(%s))  @filter(has(TRANSID) AND eq(dgraph.type,["Transaccion"]) ) {
 			uid
 			ip
 			device
@@ -157,21 +157,32 @@ func GetTransaccionByIDData(idtrans string, fn FunctionBackTransaccion) {
 		trans := Transacciones{}
 		err33 := json.Unmarshal(data, &trans)
 		if err33 == nil {
-			transaccion := trans.Transacciones[0]
-			conteo1 := len(transaccion.ProductIDS)
-			GetClienteByIDData(transaccion.Buyer.UID, func(data Cliente) {
-				transaccion.Buyer = data
-				prods := transaccion.ProductIDS
-				for i := range prods {
-					prod := prods[i]
-					GetProductoByIDData(prod, func(data2 Producto) {
-						transaccion.Products.Productos = append(transaccion.Products.Productos, data2)
-						if conteo1 == len(transaccion.Products.Productos) {
-							fn(transaccion)
+			if len(trans.Transacciones) > 0 {
+				transaccion := trans.Transacciones[0]
+				conteo1 := len(transaccion.ProductIDS)
+				GetClienteByIDData(transaccion.Buyer.UID, func(data Cliente) {
+					if data.UID != "" {
+						transaccion.Buyer = data
+						prods := transaccion.ProductIDS
+						for i := range prods {
+							prod := prods[i]
+							GetProductoByIDData(prod, func(data2 Producto) {
+								transaccion.Products.Productos = append(transaccion.Products.Productos, data2)
+								if conteo1 == len(transaccion.Products.Productos) {
+									fn(transaccion)
+								}
+							})
+
 						}
-					})
-				}
-			})
+					} else {
+						fmt.Println("Cliente fallo")
+					}
+
+				})
+			} else {
+				fn(Transaccion{})
+			}
+
 		}
 	})
 }

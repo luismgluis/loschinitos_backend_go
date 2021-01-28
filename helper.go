@@ -304,13 +304,14 @@ func analisisTransaccionesX(texto string, fecha int, sobreescribir bool) {
 
 	}
 	actualizarCliente := func(t Transaccion) {
-		//fmt.Println(t.BuyerID)
+		//fmt.Println(t.BuyerID) //esto se podria optimizar agregando todas las transacciones de un mismo cliente haciendo una sola consulta y un solo insert
 		type ClienteRicacho struct {
 			UID           string        `json:"uid,omitempty"`
 			Transacciones []Transaccion `json:"transacciones,omitempty"`
 		}
 		GetClienteIDfromOldID(t.BuyerID, func(cliente Cliente) {
 			if cliente.UID != "" && cliente.Name != "" {
+				t.Buyer = cliente
 				cliente.Transacciones = append(cliente.Transacciones, t)
 
 				jsonbytes, err := json.Marshal(cliente)
@@ -354,7 +355,7 @@ func analisisTransaccionesX(texto string, fecha int, sobreescribir bool) {
 	uploadTransaccion := func(t Transaccion) {
 		query := fmt.Sprintf(`
 		{
-			transacciones(func: eq(TRANSID,"%s")) {
+			transacciones(func: eq(TRANSID,"%s")) @filter(eq(dgraph.type,["Transaccion"])) {
 			  uid
 			  TRANSID
 			}

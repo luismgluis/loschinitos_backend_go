@@ -106,8 +106,13 @@ func GetClienteByIDData(id string, fn FunctionBackCliente) {
 		clis := Clientes{}
 		err33 := json.Unmarshal(data, &clis)
 		if err33 == nil {
-			cli := clis.Clientes[0]
-			fn(cli)
+			if len(clis.Clientes) > 0 {
+				cli := clis.Clientes[0]
+				fn(cli)
+			} else {
+				fn(Cliente{})
+			}
+
 		}
 	})
 }
